@@ -1,2 +1,0 @@
-# Render
-My tiny renderer 
