@@ -22,6 +22,7 @@ public:
 	Vec3<float> vert(int i);
 	std::vector<int> face(int i);
 	Vec2<int> get_uv(int iface, int nvert);
+	Vec3<float> get_vn(int indx);
 	TGAColor get_color(Vec2<int> uv);
 };
 #endif 

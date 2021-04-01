@@ -99,6 +99,10 @@ Vec2<int> Model::get_uv(int iface, int nvert)
     return Vec2<int>(uv[idx].x * texture_img.get_width(), uv[idx].y * texture_img.get_height());
 }
 
+Vec3<float> Model::get_vn(int indx){
+    return norm[indx];
+}
+
 TGAColor Model::get_color(Vec2<int> uv){
     return texture_img.get(uv.x, uv.y);
 }

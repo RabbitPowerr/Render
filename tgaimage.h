@@ -57,6 +57,15 @@ struct TGAColor {
 		}
 		return *this;
 	}
+	TGAColor operator*(float cf) {
+		TGAColor res = *this;
+		cf = (cf > 1.f ? 1.f : (cf < 0.f ? 0.f : cf));
+		res.b *= cf;
+		res.r *= cf;
+		res.g *= cf;
+		res.a *= cf;
+		return res;
+	}
 };
 
 

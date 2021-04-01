@@ -5,7 +5,6 @@
 	
 
 int main(int argc, char** argv) {
-	
 	if (argc <= 1) {
 		std::cout << "Err" << std::endl;
 		return 0;
@@ -20,13 +19,13 @@ int main(int argc, char** argv) {
 		std::cout << "Err" << std::endl;
 		return 0;
 	}
-	Vec3<float> eye(0, 0, -3.3);
+	Vec3<float> eye(0, 0, 3);
 	if (argc >= 9) {
 		eye.x =atof(argv[6]);
 		eye.y =atof(argv[7]);
 		eye.z =atof(argv[8]);
 	}
-	Vec3<float> light(0, 0, 1);
+	Vec3<float> light(0, 0,1);
 	if (argc >= 13) {
 		light.x = atof(argv[10]);
 		light.y = atof(argv[11]);
