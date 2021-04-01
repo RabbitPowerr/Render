@@ -91,6 +91,7 @@ public:
 	bool flip_horizontally();
 	bool flip_vertically();
 	bool scale(int w, int h);
+	bool exist() { return width > 0; }
 	TGAColor get(int x, int y);
 	bool set(int x, int y, TGAColor c);
 	~TGAImage();

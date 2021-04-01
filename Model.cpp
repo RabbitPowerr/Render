@@ -51,10 +51,12 @@ Model::Model(const char* filename, const char* texture){
     }
     std::cout << "OK\n";
     std::cout << vertex.size() << ' ' << faces.size() <<'\n';
-
+    std::string buff(texture);
+    std::string map_name = buff.substr(0, buff.find_last_of('.'))+ std::string("_nm.tga");
     std::cout << "texture file " << texture << " loading " << (texture_img.read_tga_file(texture) ? "ok" : "failed") << std::endl;
+    std::cout << "normal map file " << map_name << " loading " << (normal_map.read_tga_file(map_name.c_str()) ? "ok" : "failed") << std::endl;
     texture_img.flip_vertically();
-    
+    normal_map.flip_vertically();
 
 
 
@@ -103,8 +105,19 @@ Vec3<float> Model::get_vn(int indx){
     return norm[indx];
 }
 
+Vec3<float> Model::get_vn(Vec2<int> cr){
+    TGAColor color = normal_map.get(cr.x, cr.y);
+    Vec3<float> ans(color.r, color.g, color.b);
+    ans.normalize();
+    return ans;
+}
+
 TGAColor Model::get_color(Vec2<int> uv){
     return texture_img.get(uv.x, uv.y);
+}
+
+bool Model::exist_nm(){
+    return normal_map.exist();
 }
 
 

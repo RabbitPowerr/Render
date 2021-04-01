@@ -18,7 +18,7 @@ void Renderer::start_render(const char* outfile) {
 	Matrix look = lookat(eye, center, Vec3<float>(0, 1, 0));
 	for (int i = 0; i < model.numfaces(); i++) {
 		std::vector<int> face = model.face(i);
-		std::cerr << i << std::endl;
+		//std::cerr << i << std::endl;
 		Vec3<float> screen_coords[3];
 		Vec3<float> coords[3];
         for (int j = 0; j < 3; j++) {
@@ -48,14 +48,16 @@ void Renderer::triangle(Vec3<int> t0, Vec3<int> t1, Vec3<int> t2, TGAImage& imag
     Vec2<int> uv1 = model.get_uv(indx, 1);
     Vec2<int> uv2 = model.get_uv(indx, 2);
     std::vector<int> face = model.face(indx);
-    std::vector<float> intensity(3);
-    for (int i = 0; i < 3; i++) {
-        intensity[i] = model.get_vn(face[i])*ligth_dir;
+    
+    std::vector<Vec3<float>> vecn(3);
+    if (!model.exist_nm()) {
+        for (int i = 0; i < 3; i++) {
+            vecn[i] = model.get_vn(face[i]);
+        }
     }
-
-    if (t0.y > t1.y) { std::swap(t0, t1); std::swap(uv0, uv1); std::swap(intensity[0], intensity[1]); }
-    if (t0.y > t2.y) { std::swap(t0, t2); std::swap(uv0, uv2); std::swap(intensity[0], intensity[2]);}
-    if (t1.y > t2.y) { std::swap(t1, t2); std::swap(uv1, uv2); std::swap(intensity[2], intensity[1]);}
+    if (t0.y > t1.y) { std::swap(t0, t1); std::swap(uv0, uv1); std::swap(vecn[0], vecn[1]); }
+    if (t0.y > t2.y) { std::swap(t0, t2); std::swap(uv0, uv2); std::swap(vecn[0], vecn[2]);}
+    if (t1.y > t2.y) { std::swap(t1, t2); std::swap(uv1, uv2); std::swap(vecn[2], vecn[1]);}
 
     int total_height = t2.y - t0.y + 1;
 
@@ -66,13 +68,14 @@ void Renderer::triangle(Vec3<int> t0, Vec3<int> t1, Vec3<int> t2, TGAImage& imag
         float b = (float)(y - t0.y) / segment_height;
         Vec3<int> A = t0 + Vec3<float>(t2 - t0) * a;
         Vec3<int> B = t0 + Vec3<float>(t1 - t0) * b;
-
-        float intensityA = intensity[0] + (intensity[2] - intensity[0]) * a;
-        float intensityB = intensity[0]+(intensity[1]-intensity[0])*b;
-
+        Vec3<float> vecnA, vecnB;
+        if (!model.exist_nm()) {
+            vecnA = vecn[0] + (vecn[2] - vecn[0]) * a;
+            vecnB = vecn[0] + (vecn[1] - vecn[0]) * b;
+        }
         Vec2<int> uvA = uv0 + (uv2 - uv0) * a;
         Vec2<int> uvB = uv0 + (uv1 - uv0) * b;
-        if (A.x > B.x) { std::swap(A, B); std::swap(uvA, uvB); std::swap(intensityA, intensityB); }
+        if (A.x > B.x) { std::swap(A, B); std::swap(uvA, uvB); std::swap(vecnA, vecnB); }
         
         for (int j =A.x; j <=B.x; j++) {
             float phi = B.x == A.x ? 1. : (float)(j - A.x) / (float)(B.x - A.x);
@@ -81,8 +84,11 @@ void Renderer::triangle(Vec3<int> t0, Vec3<int> t1, Vec3<int> t2, TGAImage& imag
             if (P.z > zbuffer[j][y]) {
                 TGAColor color = model.get_color(uvP);
                 zbuffer[j][y] = P.z;
-                float curr_intensity = intensityA + (intensityB - intensityA) * phi;
-
+                float curr_intensity ;
+                if (!model.exist_nm()) {
+                    curr_intensity = (vecnA + (vecnB - vecnA) * phi) * ligth_dir;
+                }
+                else curr_intensity = model.get_vn(uvP)*ligth_dir;
                 image.set(j, y, color*curr_intensity);
             }
         }
@@ -95,13 +101,15 @@ void Renderer::triangle(Vec3<int> t0, Vec3<int> t1, Vec3<int> t2, TGAImage& imag
         float b = (float)(y - t1.y) / segment_height;
         Vec3<int> A = t0 + Vec3<float>(t2 - t0) * a;
         Vec3<int> B = t1 + Vec3<float>(t2 - t1) * b;
-        float intensityA = intensity[0] + (intensity[2] - intensity[0]) * a;
-        float intensityB = intensity[1] + (intensity[2] - intensity[1]) * b;
-
+        Vec3<float> vecnB, vecnA;
+        if (!model.exist_nm()) {
+            vecnA = vecn[0] + (vecn[2] - vecn[0]) * a;
+            vecnB = vecn[1] + (vecn[2] - vecn[1]) * b;
+        }
 
         Vec2<int> uvA = uv0 + (uv2 - uv0) * a;
         Vec2<int> uvB = uv1 + (uv2 - uv1) * b;
-        if (A.x > B.x) { std::swap(A, B); std::swap(uvA, uvB); std::swap(intensityA, intensityB);}
+        if (A.x > B.x) { std::swap(A, B); std::swap(uvA, uvB); std::swap(vecnA, vecnB);}
         for (int j = A.x; j <= B.x; j++) {
             float phi = B.x == A.x ? 1. : (float)(j - A.x) / (float)(B.x - A.x);
             Vec2<int> uvP = uvA + (uvB - uvA) * phi;
@@ -109,8 +117,11 @@ void Renderer::triangle(Vec3<int> t0, Vec3<int> t1, Vec3<int> t2, TGAImage& imag
             if (P.z > zbuffer[j][y]) {
                 TGAColor color = model.get_color(uvP);
                 zbuffer[j][y] = P.z;
-                float curr_intensity = intensityA + (intensityB - intensityA) * phi;
-
+                float curr_intensity;
+                if (!model.exist_nm()) {
+                    curr_intensity = (vecnA + (vecnB - vecnA) * phi) * ligth_dir;
+                }
+                else curr_intensity = model.get_vn(uvP) * ligth_dir;
                 image.set(j, y, color*curr_intensity);
             }
         }
